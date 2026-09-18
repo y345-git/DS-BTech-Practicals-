@@ -1,119 +1,418 @@
-// Write a program toImplement the ADT for singly linked list
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-struct Node{
-    int data;
-    struct Node *next;
-};
+typedef struct node {
+    void *dataPtr;
+    int type;
+    struct node *link;
+} LIST_NODE;
 
-struct Node *head = NULL;
+typedef struct {
+    int count;
+    LIST_NODE *head;
+    LIST_NODE *rear;
+} LIST;
 
-void insert(){
-    struct Node *newNode, *temp;
-    int value;
 
-    newNode = (struct Node *)malloc(sizeof(struct Node));
+/* Create List */
 
-    printf("Enter value: ");
-    scanf("%d", &value);
+LIST *createList() {
+    LIST *list;
 
-    newNode->data = value;
-    newNode->next = NULL;
+    list = malloc(sizeof(LIST));
 
-    if (head == NULL)
-        head = newNode;
-    else{
-        temp = head;
-        while (temp->next != NULL)
-            temp = temp->next;
+    if (list == NULL)
+        return NULL;
 
-        temp->next = newNode;
-    }
+    list->count = 0;
+    list->head = NULL;
+    list->rear = NULL;
+
+    return list;
 }
 
-void deleteNode(){
-    struct Node *temp, *prev;
-    int value;
 
-    printf("Enter value to delete: ");
-    scanf("%d", &value);
+/* Insert at End */
 
-    temp = head;
-    prev = NULL;
+int addNode(LIST *list, void *data, int type) {
+    LIST_NODE *newNode;
 
-    while (temp != NULL && temp->data != value){
-        prev = temp;
-        temp = temp->next;
+    newNode = malloc(sizeof(LIST_NODE));
+
+    if (newNode == NULL)
+        return 0;
+
+    newNode->dataPtr = data;
+    newNode->type = type;
+    newNode->link = NULL;
+
+    if (list->head == NULL) {
+        list->head = newNode;
+        list->rear = newNode;
     }
+    else {
+        list->rear->link = newNode;
+        list->rear = newNode;
+    }
+
+    list->count++;
+
+    return 1;
+}
+
+
+/* Compare Data */
+
+int compareData(void *data1, int type1, void *data2, int type2) {
+    if (type1 != type2)
+        return 0;
+
+    if (type1 == 1) {
+        if (*(int *)data1 == *(int *)data2)
+            return 1;
+    }
+
+    else if (type1 == 2) {
+        if (*(float *)data1 == *(float *)data2)
+            return 1;
+    }
+
+    else if (type1 == 3) {
+        if (*(char *)data1 == *(char *)data2)
+            return 1;
+    }
+
+    else {
+        if (strcmp((char *)data1, (char *)data2) == 0)
+            return 1;
+    }
+
+    return 0;
+}
+
+
+/* Delete */
+
+void *removeNode(LIST *list, void *key, int keyType, int *type) {
+    LIST_NODE *temp;
+    LIST_NODE *previous;
+    void *data;
+
+    temp = list->head;
+    previous = NULL;
+
+    while (temp != NULL) {
+        if (compareData(temp->dataPtr, temp->type, key, keyType)) {
+
+            data = temp->dataPtr;
+            *type = temp->type;
+
+            if (previous == NULL)
+                list->head = temp->link;
+            else
+                previous->link = temp->link;
+
+            if (temp == list->rear)
+                list->rear = previous;
+
+            list->count--;
+
+            free(temp);
+
+            return data;
+        }
+
+        previous = temp;
+        temp = temp->link;
+    }
+
+    return NULL;
+}
+
+
+/* Search */
+
+void *searchList(LIST *list, void *key, int keyType, int *type) {
+    LIST_NODE *temp;
+
+    temp = list->head;
+
+    while (temp != NULL) {
+        if (compareData(temp->dataPtr, temp->type, key, keyType)) {
+            *type = temp->type;
+            return temp->dataPtr;
+        }
+
+        temp = temp->link;
+    }
+
+    return NULL;
+}
+
+
+/* Empty */
+
+int emptyList(LIST *list) {
+    if (list->count == 0)
+        return 1;
+
+    return 0;
+}
+
+
+/* Full */
+
+int fullList(LIST *list) {
+    LIST_NODE *temp;
+
+    temp = malloc(sizeof(LIST_NODE));
 
     if (temp == NULL)
-        printf("Value not found.\n");
-    else{
-        if (prev == NULL)
-            head = temp->next;
-        else
-            prev->next = temp->next;
+        return 1;
 
-        free(temp);
-        printf("Deleted successfully.\n");
-    }
+    free(temp);
+
+    return 0;
 }
 
-void search(){
-    struct Node *temp = head;
-    int value;
 
-    printf("Enter value to search: ");
-    scanf("%d", &value);
+/* Count */
 
-    while (temp != NULL){
-        if (temp->data == value){
-            printf("Value found.\n");
-            return;
-        }
-        temp = temp->next;
-    }
-
-    printf("Value not found.\n");
+int listCount(LIST *list) {
+    return list->count;
 }
 
-void display(){
-    struct Node *temp = head;
 
-    if (head == NULL){
+/* Display Data */
+
+void displayData(void *data, int type) {
+    if (type == 1)
+        printf("%d", *(int *)data);
+
+    else if (type == 2)
+        printf("%f", *(float *)data);
+
+    else if (type == 3)
+        printf("%c", *(char *)data);
+
+    else
+        printf("%s", (char *)data);
+}
+
+
+/* Display List */
+
+void displayList(LIST *list) {
+    LIST_NODE *temp;
+
+    if (emptyList(list)) {
         printf("List is empty.\n");
         return;
     }
 
-    while (temp != NULL){
-        printf("%d -> ", temp->data);
-        temp = temp->next;
+    temp = list->head;
+
+    printf("List: ");
+
+    while (temp != NULL) {
+        displayData(temp->dataPtr, temp->type);
+        printf(" -> ");
+
+        temp = temp->link;
     }
 
     printf("NULL\n");
 }
 
-int main(){
+
+/* Destroy List */
+
+void destroyList(LIST *list) {
+    LIST_NODE *temp;
+
+    while (list->head != NULL) {
+        temp = list->head;
+
+        list->head = temp->link;
+
+        free(temp->dataPtr);
+        free(temp);
+    }
+
+    free(list);
+}
+
+
+/* Read Data */
+
+void *readData(int *type) {
+    char input[100];
+    char *end;
+    long intValue;
+    float floatValue;
+
+    printf("Enter value: ");
+    scanf("%99s", input);
+
+
+    /* Character */
+
+    if (strlen(input) == 1 &&
+        !(input[0] >= '0' && input[0] <= '9')) {
+
+        char *value;
+
+        value = malloc(sizeof(char));
+        *value = input[0];
+
+        *type = 3;
+
+        return value;
+    }
+
+
+    /* Integer */
+
+    intValue = strtol(input, &end, 10);
+
+    if (*end == '\0') {
+        int *value;
+
+        value = malloc(sizeof(int));
+        *value = intValue;
+
+        *type = 1;
+
+        return value;
+    }
+
+
+    /* Float */
+
+    floatValue = strtof(input, &end);
+
+    if (*end == '\0') {
+        float *value;
+
+        value = malloc(sizeof(float));
+        *value = floatValue;
+
+        *type = 2;
+
+        return value;
+    }
+
+
+    /* String */
+
+    {
+        char *value;
+
+        value = malloc(strlen(input) + 1);
+        strcpy(value, input);
+
+        *type = 4;
+
+        return value;
+    }
+}
+
+
+/* Main */
+
+int main() {
+    LIST *list;
+    void *data;
+    void *result;
+    void *key;
+    int type;
+    int keyType;
     int choice;
 
-    while (1){
-        printf("\nSingly Linked List ADT Operations:\n");
-        printf("\n1. Insert\n");
-        printf("2. Delete\n");
-        printf("3. Search\n");
-        printf("4. Display\n");
-        printf("5. Exit\n");
-        printf("Enter choice: ");
+    list = createList();
+
+    if (list == NULL) {
+        printf("Unable to create list.\n");
+        return 0;
+    }
+
+    while (1) {
+        printf("\n1. Insert");
+        printf("\n2. Delete");
+        printf("\n3. Search");
+        printf("\n4. Display");
+        printf("\n5. Count");
+        printf("\n6. Exit");
+
+        printf("\nEnter choice: ");
         scanf("%d", &choice);
 
-        switch (choice){
-            case 1: insert(); break;
-            case 2: deleteNode(); break;
-            case 3: search(); break;
-            case 4: display(); break;
-            case 5: exit(0);
-            default: printf("Invalid choice.\n");
+        if (choice == 1) {
+            data = readData(&type);
+
+            if (addNode(list, data, type))
+                printf("Inserted successfully.\n");
+            else {
+                printf("List overflow.\n");
+                free(data);
+            }
+        }
+
+        else if (choice == 2) {
+            printf("Enter value to delete:\n");
+
+            key = readData(&keyType);
+
+            result = removeNode(list, key, keyType, &type);
+
+            if (result == NULL)
+                printf("Value not found.\n");
+            else {
+                printf("Deleted value: ");
+                displayData(result, type);
+                printf("\n");
+
+                free(result);
+            }
+
+            free(key);
+        }
+
+        else if (choice == 3) {
+            printf("Enter value to search:\n");
+
+            key = readData(&keyType);
+
+            result = searchList(list, key, keyType, &type);
+
+            if (result == NULL)
+                printf("Value not found.\n");
+            else {
+                printf("Value found: ");
+                displayData(result, type);
+                printf("\n");
+            }
+
+            free(key);
+        }
+
+        else if (choice == 4) {
+            displayList(list);
+        }
+
+        else if (choice == 5) {
+            printf("Number of elements: %d\n", listCount(list));
+        }
+
+        else if (choice == 6) {
+            destroyList(list);
+            printf("List destroyed.\n");
+            break;
+        }
+
+        else {
+            printf("Invalid choice.\n");
         }
     }
 
